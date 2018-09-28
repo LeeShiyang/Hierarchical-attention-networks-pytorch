@@ -24,7 +24,7 @@ Statistics of datasets I used for experiments. These datasets could be download 
 | Amazon Review Full     |    5    |   3 000 000   |    650 000   |
 | Amazon Review Polarity |    2    |   3 600 000   |    400 000   |
 
-Additionally, I also use word2vec pre-trained models, taken from GLOVE, which you could download from [link] (https://nlp.stanford.edu/projects/glove/). I run experiments with all 4 word2vec files (50d, 100d, 200d and 300d). You could easily switch to other common word2vec models, like the one provided in FastText [link] (https://fasttext.cc/docs/en/crawl-vectors.html)
+Additionally, I also use word2vec pre-trained models, taken from GLOVE, which you could download from [link](https://nlp.stanford.edu/projects/glove/). I run experiments with all 4 word2vec files (50d, 100d, 200d and 300d). You could easily switch to other common word2vec models, like the one provided in FastText [link](https://fasttext.cc/docs/en/crawl-vectors.html)
 
 ## Setting:
 
