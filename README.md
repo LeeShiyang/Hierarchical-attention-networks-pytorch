@@ -98,3 +98,12 @@ The training/test loss/accuracy curves for each dataset's experiments (with the 
 <img src="demo/yahoo_50.png" width="420"> <img src="demo/yahoo_100.png" width="420"> 
 <img src="demo/yahoo_200.png" width="420"> <img src="demo/yahoo_300.png" width="420">
 
+- **amazon_review**
+
+<img src="demo/amazonreviewfull_50.png" width="420"> <img src="demo/empty.png" width="420"> 
+<img src="demo/amazonreviewfull_200.png" width="420"> <img src="demo/empty.png" width="420">
+
+- **amazon_polarity**
+
+<img src="demo/amazonreviewpolarity_50.png" width="420"> <img src="demo/amazonreviewpolarity_100.png" width="420"> 
+<img src="demo/empty.png" width="420"> <img src="demo/amazonreviewpolarity_50.png" width="420">
