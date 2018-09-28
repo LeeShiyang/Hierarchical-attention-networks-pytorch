@@ -75,7 +75,7 @@ The training/test loss/accuracy curves for each dataset's experiments (with the 
 
 - **ag_news**
 
-<img src="demo/agnews_50.png" width="450"> <img src="demo/agnews_100.png" width="450"> 
-<img src="demo/agnews_200.png" width="450"> <img src="demo/agnews_300.png" width="450">
+<img src="demo/agnews_50.png" width="420"> <img src="demo/agnews_100.png" width="420"> 
+<img src="demo/agnews_200.png" width="420"> <img src="demo/agnews_300.png" width="420">
 
 
