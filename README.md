@@ -60,7 +60,7 @@ Results for test set are presented as follows:  A(B/C):
 
 Each experiment is run over 10 epochs.
 
-|      Size     |        50      |      100     |      200     |      300     |
+| GLOVE word2vec|        50      |      100     |      200     |      300     |
 |:---------------:|:------------------:|:------------------:|:------------------:|:------------------:|
 |    ag_news    |   updated soon   |   updated soon   |   updated soon   |   updated soon   |
 |   sogu_news   |   updated soon   |   updated soon   |   updated soon   |   updated soon   |
