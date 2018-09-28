@@ -31,7 +31,7 @@ was used, without loading pre-trained word2vec model. I admit that we could stil
 ## Setting:
 
 During my experiments, I found out that given different datasets and different embedding layer's dimension, some combinations of batch size and learning rate yield better performance (faster convergence and higher accuracy) than others. Particularly in some cases, if you set wrong values for these 2 very important parameters, your model will never converge. Detail setting for each experiments will be shown in **Experiments** part.
-I have not set a fixed number of epoches for each experiment. Instead, I apply early stopping technique, to stop training phase after validation loss has not been improved for **n** epoches. 
+I have not set a fixed number of epoches for each experiment. Instead, I apply early stopping technique, to stop training phase after test loss has not been improved for **n** epoches. 
 
 ## Training
 
@@ -107,3 +107,5 @@ The training/test loss/accuracy curves for each dataset's experiments (with the 
 
 <img src="demo/amazonreviewpolarity_50.png" width="420"> <img src="demo/amazonreviewpolarity_100.png" width="420"> 
 <img src="demo/empty.png" width="420"> <img src="demo/amazonreviewpolarity_50.png" width="420">
+
+There are some experiments I have not had time to train. For suach experiments, it statistics as well as loss/accuracy visualization are empty. Additionally, there are some experiments, for some reasons, I can not wait until they are finished, hence I stopped training phase before it should be . You could see whether a model was stopped by early stopping technique or by me by looking at the test loss curve, if the loss is not improved for 5 consecutive epoches, it is the former case. Othewise, if the loss is still going down, it is the latter case. When I have time, I will complete the incomplete experiments, and update results here.
