@@ -71,11 +71,11 @@ Each experiment is run over 10 epochs.
 | amazon_review |   updated soon   |   updated soon   |   updated soon   |   updated soon   |
 |amazon_polarity|   updated soon   |   updated soon   |   updated soon   |   updated soon   |
 
-The training/test loss/accuracy curves for each experiment are shown below:
+The training/test loss/accuracy curves for each dataset's experiments (with the order from left to right, top to bottom is 50d, 100d, 200d and 300d word2vec) are shown below:
 
 - **ag_news**
 
-<img src="demo/agnews_50.png" width="400"> <img src="demo/agnews_100.png" width="400"> 
-<img src="demo/agnews_200.png" width="400">
+<img src="demo/agnews_50.png" width="450"> <img src="demo/agnews_100.png" width="450"> 
+<img src="demo/agnews_200.png" width="450"> <img src="demo/agnews_300.png" width="450">
 
 
