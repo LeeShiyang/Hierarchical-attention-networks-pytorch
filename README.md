@@ -78,4 +78,12 @@ The training/test loss/accuracy curves for each dataset's experiments (with the 
 <img src="demo/agnews_50.png" width="420"> <img src="demo/agnews_100.png" width="420"> 
 <img src="demo/agnews_200.png" width="420"> <img src="demo/agnews_300.png" width="420">
 
+- **db_pedia**
 
+<img src="demo/dbpedia_50.png" width="420"> <img src="demo/dbpedia_100.png" width="420"> 
+<img src="demo/dbpedia_200.png" width="420"> <img src="demo/dbpedia_300.png" width="420">
+
+- **yelp_polarity**
+
+<img src="demo/yelpreviewpolarity_50.png" width="420"> <img src="demo/yelpreviewpolarity_100.png" width="420"> 
+<img src="demo/yelpreviewpolarity_200.png" width="420"> <img src="demo/empty" width="420">
