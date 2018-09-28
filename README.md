@@ -92,3 +92,9 @@ The training/test loss/accuracy curves for each dataset's experiments (with the 
 
 <img src="demo/yelpreviewfull_50.png" width="420"> <img src="demo/empty.png" width="420"> 
 <img src="demo/empty.png" width="420"> <img src="demo/yelpreviewfull_300.png" width="420">
+
+- **Yahoo! Answers**
+
+<img src="demo/yahoo_50.png" width="420"> <img src="demo/yahoo_100.png" width="420"> 
+<img src="demo/yahoo_200.png" width="420"> <img src="demo/yahoo_300.png" width="420">
+
