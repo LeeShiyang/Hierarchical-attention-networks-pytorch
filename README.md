@@ -24,11 +24,14 @@ Statistics of datasets I used for experiments. These datasets could be download 
 | Amazon Review Full     |    5    |   3 000 000   |    650 000   |
 | Amazon Review Polarity |    2    |   3 600 000   |    400 000   |
 
-Additionally, I also use word2vec pre-trained models, taken from GLOVE, which you could download from [link] (https://nlp.stanford.edu/projects/glove/). I run experiments with all 4 word2vec files (50d, 100d, 200d and 300d). You could easily switch to other common word2vec models, like the one provided in FastText [link] (https://fasttext.cc/docs/en/crawl-vectors.html)
+Additionally, I also use word2vec pre-trained models, taken from GLOVE, which you could download from [link](https://nlp.stanford.edu/projects/glove/). I run experiments with all 4 word2vec files (50d, 100d, 200d and 300d). You could easily switch to other common word2vec models, like the one provided in FastText [link](https://fasttext.cc/docs/en/crawl-vectors.html) 
+In the paper, it is said that a pre-trained word2vec is used. however, to the best of my knowledge, at least in pytorch, there is no implementation on github using it. In all HAN github repositories I have seen so far, a default embedding layer
+was used, without loading pre-trained word2vec model. I admit that we could still train HAN model without any pre-trained word2vec model. However, to serve the purpose of re-implementing origin model, in all experiments, ad mentioned above, I used 1 out of 4 pre-trained word2vec models as initilization for embedding layer.
 
 ## Setting:
 
-During my experiments, I found out that given different datasets and different embedding layer's dimension, some combinations of batch size and learning rate yield better performance (faster convergence and higher accuracy) than others. Particularly in some cases, if you set wrong values for these 2 very important parameters, your model will never converge. Detail setting for each experiments will be shown in **Experiments** part
+During my experiments, I found out that given different datasets and different embedding layer's dimension, some combinations of batch size and learning rate yield better performance (faster convergence and higher accuracy) than others. Particularly in some cases, if you set wrong values for these 2 very important parameters, your model will never converge. Detail setting for each experiments will be shown in **Experiments** part.
+I have not set a fixed number of epoches for each experiment. Instead, I apply early stopping technique, to stop training phase after test loss has not been improved for **n** epoches. 
 
 ## Training
 
@@ -57,7 +60,7 @@ Results for test set are presented as follows:  A(B/C):
 
 Each experiment is run over 10 epochs.
 
-|      Size     |        50      |      100     |      200     |      300     |
+| GLOVE word2vec|        50      |      100     |      200     |      300     |
 |:---------------:|:------------------:|:------------------:|:------------------:|:------------------:|
 |    ag_news    |   updated soon   |   updated soon   |   updated soon   |   updated soon   |
 |   sogu_news   |   updated soon   |   updated soon   |   updated soon   |   updated soon   |
@@ -68,9 +71,43 @@ Each experiment is run over 10 epochs.
 | amazon_review |   updated soon   |   updated soon   |   updated soon   |   updated soon   |
 |amazon_polarity|   updated soon   |   updated soon   |   updated soon   |   updated soon   |
 
-The training/test loss/accuracy curves for each experiment are shown below:
+The training/test loss/accuracy curves for each dataset's experiments (with the order from left to right, top to bottom is 50d, 100d, 200d and 300d word2vec) are shown below:
 
 - **ag_news**
-![voc2007 loss](demo/voc2007.png) 
 
+<img src="demo/agnews_50.png" width="420"> <img src="demo/agnews_100.png" width="420"> 
+<img src="demo/agnews_200.png" width="420"> <img src="demo/agnews_300.png" width="420">
 
+- **db_pedia**
+
+<img src="demo/dbpedia_50.png" width="420"> <img src="demo/dbpedia_100.png" width="420"> 
+<img src="demo/dbpedia_200.png" width="420"> <img src="demo/dbpedia_300.png" width="420">
+
+- **yelp_polarity**
+
+<img src="demo/yelpreviewpolarity_50.png" width="420"> <img src="demo/yelpreviewpolarity_100.png" width="420"> 
+<img src="demo/yelpreviewpolarity_200.png" width="420"> <img src="demo/empty.png" width="420">
+
+- **yelp_review**
+
+<img src="demo/yelpreviewfull_50.png" width="420"> <img src="demo/empty.png" width="420"> 
+<img src="demo/empty.png" width="420"> <img src="demo/yelpreviewfull_300.png" width="420">
+
+- **Yahoo! Answers**
+
+<img src="demo/yahoo_50.png" width="420"> <img src="demo/yahoo_100.png" width="420"> 
+<img src="demo/yahoo_200.png" width="420"> <img src="demo/yahoo_300.png" width="420">
+
+- **amazon_review**
+
+<img src="demo/amazonreviewfull_50.png" width="420"> <img src="demo/empty.png" width="420"> 
+<img src="demo/amazonreviewfull_200.png" width="420"> <img src="demo/empty.png" width="420">
+
+- **amazon_polarity**
+
+<img src="demo/amazonreviewpolarity_50.png" width="420"> <img src="demo/amazonreviewpolarity_100.png" width="420"> 
+<img src="demo/empty.png" width="420"> <img src="demo/amazonreviewpolarity_50.png" width="420">
+
+There are some experiments I have not had time to train. For such experiments, statistics as well as loss/accuracy visualization are empty. Additionally, there are some other experiments, I can not wait until they are finished, hence I stopped training phase before it should be . You could see whether a model was stopped by early stopping technique or by me by looking at the test loss curve, if the loss is not improved for 5 consecutive epoches, it is the former case. Othewise, if the loss is still going down, it is the latter case. When I have time, I will complete the incomplete experiments, and update results here.
+
+After completing training phase, you could see model's parameters you have set, accuracy, loss and confusion matrix for test set at the end of each epoch at **root_folder/trained_models/logs.txt**
