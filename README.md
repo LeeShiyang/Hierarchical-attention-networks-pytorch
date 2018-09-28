@@ -6,7 +6,12 @@ Here is my pytorch implementation of the model described in the paper **Hierarch
 
 <p align="center">
   <img src="demo/video.gif"><br/>
-  <i>An example of my model's output for Dbpedia dataset.</i>
+  <i>An example of app demo for my model's output for Dbpedia dataset.</i>
+</p>
+
+<p align="center">
+  <img src="demo/output.gif"><br/>
+  <i>An example of my model's performance for Dbpedia dataset.</i>
 </p>
 
 ## Datasets:
