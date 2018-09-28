@@ -86,7 +86,7 @@ The training/test loss/accuracy curves for each dataset's experiments (with the 
 - **yelp_polarity**
 
 <img src="demo/yelpreviewpolarity_50.png" width="420"> <img src="demo/yelpreviewpolarity_100.png" width="420"> 
-<img src="demo/yelpreviewpolarity_200.png" width="420"> <img src="demo/empty" width="420">
+<img src="demo/yelpreviewpolarity_200.png" width="420"> <img src="demo/empty.png" width="420">
 
 - **yelp_review**
 
