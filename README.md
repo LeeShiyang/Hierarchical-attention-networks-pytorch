@@ -74,6 +74,7 @@ Each experiment is run over 10 epochs.
 The training/test loss/accuracy curves for each experiment are shown below:
 
 - **ag_news**
-![agnews_50 loss](demo/agnews_50.png) ![agnews_100 loss](demo/agnews_100.png)
+
+<img src="demo/agnews_50.png" width="280"> <img src="demo/agnews_100.png" width="280"> <img src="demo/agnews_200.png" width="280">
 
 
