@@ -69,7 +69,7 @@ If you want to train a model with your preference word2vec model, you could run:
 For testing a trained model with your test file, please run the following command:
 - **python test.py --word2vec_path path/to/your/word2vec**, with the word2vec file is the same as the one you use in training phase.
 
-You could find some trained models I have trained in [link](https://drive.google.com/open?id=1zzC4r0nn8yInWjCbVrVZPFYyOWJQizqh)
+You could find some trained models I have trained in [link](https://drive.google.com/open?id=1A50PDQMm0THnU6QDxOEsvKqH-ZTxmGpT)
 
 ## Experiments:
 
