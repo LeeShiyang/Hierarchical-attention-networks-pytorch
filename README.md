@@ -119,8 +119,13 @@ After completing training phase, you could see model's parameters you have set, 
 
 ## Demo:
 
-I wrote a simple app which is suitable for quick test with any input text. In order to use the app, you could follow the following steps:
+I wrote a simple web which is suitable for quick test with any input text. In order to use the app, you could follow the following steps:
 
 - **Step 1**: Run the script app.py
-<img src="demo/1.png" width="600" style="text-align:center;">
+<img src="demo/1.png" width="800">
 
+- **Step 2**: Web interface
+<img src="demo/2.png" width="800">
+
+- **Step 3**: Select trained model
+<img src="demo/3.png" width="800">
