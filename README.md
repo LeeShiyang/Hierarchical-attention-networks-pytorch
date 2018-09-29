@@ -121,3 +121,6 @@ After completing training phase, you could see model's parameters you have set, 
 
 I wrote a simple app which is suitable for quick test with any input text. In order to use the app, you could follow the following steps:
 
+- **Step 1**: Run the script app.py
+<img src="demo/1.png" width="600">
+
