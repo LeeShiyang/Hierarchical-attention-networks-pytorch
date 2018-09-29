@@ -14,6 +14,21 @@ Here is my pytorch implementation of the model described in the paper **Hierarch
   <i>An example of my model's performance for Dbpedia dataset.</i>
 </p>
 
+## How to use my code
+
+With my code, you can:
+* **Train your model with any dataset**
+* **Given either my trained model or yours, you could evaluate any test dataset whose have the same set of classes**
+* **Run a simple web app for testing purpose**
+
+## Requirements:
+
+* **python 3.6**
+* **pytorch 0.4**
+* **tensorboard**
+* **tensorboardX** (This library could be skipped if you do not use SummaryWriter)
+* **numpy**
+
 ## Datasets:
 
 Statistics of datasets I used for experiments. These datasets could be download from [link](https://drive.google.com/drive/u/0/folders/0Bz8a_Dbh9Qhbfll6bVpmNUtUcFdjYmF2SEpmZUZUcVNiMUw1TWN6RDV3a0JHT3kxLVhVR2M)
