@@ -115,7 +115,12 @@ The training/test loss/accuracy curves for each dataset's experiments (with the 
 
 There are some experiments I have not had time to train. For such experiments, statistics as well as loss/accuracy visualization are empty. Additionally, there are some other experiments, I can not wait until they are finished, hence I stopped training phase before it should be . You could see whether a model was stopped by early stopping technique or by me by looking at the test loss curve, if the loss is not improved for 5 consecutive epoches, it is the former case. Othewise, if the loss is still going down, it is the latter case. When I have time, I will complete the incomplete experiments, and update results here.
 
-After completing training phase, you could see model's parameters you have set, accuracy, loss and confusion matrix for test set at the end of each epoch at **root_folder/trained_models/logs.txt**
+After completing training phase, you could see model's parameters you have set, accuracy, loss and confusion matrix for test set at the end of each epoch at **root_folder/trained_models/logs.txt**. One example is shown below:
+
+<p align="center">
+  <img src="demo/output.png"><br/>
+  <i>An example of logs.txt for Dbpedia dataset.</i>
+</p>
 
 ## Demo:
 
@@ -129,3 +134,21 @@ I wrote a simple web which is suitable for quick test with any input text. In or
 
 - **Step 3**: Select trained model
 <img src="demo/3.png" width="800">
+
+- **Step 4**: Select word2vec model
+<img src="demo/4.png" width="800">
+
+- **Step 5 (Optional)**: Select file containing classes (one class per line)
+<img src="demo/5.png" width="800">
+
+- **Step 6**: After all necessary files are selected, press submit button
+<img src="demo/6.png" width="800">
+
+- **Step 7**: You could paste any text to the textbox
+<img src="demo/7.png" width="800">
+
+- **Step 8**: A sample text
+<img src="demo/8.png" width="800">
+
+- **Step 9**: Prediction is shown
+<img src="demo/9.png" width="800">
