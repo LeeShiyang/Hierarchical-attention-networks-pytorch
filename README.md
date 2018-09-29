@@ -150,5 +150,5 @@ I wrote a simple web which is suitable for quick test with any input text. In or
 - **Step 8**: A sample text
 <img src="demo/8.png" width="800">
 
-- **Step 9**: Prediction is shown
+- **Step 9**: After submit button pressed, prediction is shown
 <img src="demo/9.png" width="800">
