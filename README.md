@@ -45,8 +45,8 @@ Statistics of datasets I used for experiments. These datasets could be download 
 | Amazon Review Polarity |    2    |   3 600 000   |    400 000   |
 
 Additionally, I also use word2vec pre-trained models, taken from GLOVE, which you could download from [link](https://nlp.stanford.edu/projects/glove/). I run experiments with all 4 word2vec files (50d, 100d, 200d and 300d). You could easily switch to other common word2vec models, like the one provided in FastText [link](https://fasttext.cc/docs/en/crawl-vectors.html) 
-In the paper, it is said that a pre-trained word2vec is used. however, to the best of my knowledge, at least in pytorch, there is no implementation on github using it. In all HAN github repositories I have seen so far, a default embedding layer
-was used, without loading pre-trained word2vec model. I admit that we could still train HAN model without any pre-trained word2vec model. However, to serve the purpose of re-implementing origin model, in all experiments, ad mentioned above, I used 1 out of 4 pre-trained word2vec models as initilization for embedding layer.
+In the paper, it is said that a pre-trained word2vec is used. However, to the best of my knowledge, at least in pytorch, there is no implementation on github using it. In all HAN github repositories I have seen so far, a default embedding layer
+was used, without loading pre-trained word2vec model. I admit that we could still train HAN model without any pre-trained word2vec model. However, to serve the purpose of re-implementing origin model, in all experiments, as mentioned above, I used 1 out of 4 pre-trained word2vec models as initilization for embedding layer.
 
 ## Setting:
 
