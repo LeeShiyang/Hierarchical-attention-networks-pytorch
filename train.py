@@ -52,6 +52,8 @@ def train(opt):
                    "drop_last": False}
 
     max_word_length, max_sent_length = get_max_lengths(opt.train_set)
+    print('max_word_length: ',max_word_length)
+    print('max_sent_length: ',max_sent_length)
     training_set = MyDataset(opt.train_set, opt.word2vec_path, max_sent_length, max_word_length)
     training_generator = DataLoader(training_set, **training_params)
     test_set = MyDataset(opt.test_set, opt.word2vec_path, max_sent_length, max_word_length)
