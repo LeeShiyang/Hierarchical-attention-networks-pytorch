@@ -8,9 +8,10 @@ from src.utils import matrix_mul, element_wise_mul
 import pandas as pd
 import numpy as np
 import csv
+torch.set_default_dtype(torch.float64)
 
 class WordAttNet(nn.Module):
-    def __init__(self, word2vec_path, hidden_size=50):
+    def __init__(self, word2vec_path, word_feature_size=50):
         super(WordAttNet, self).__init__()
         dict = pd.read_csv(filepath_or_buffer=word2vec_path, header=None, sep=" ", quoting=csv.QUOTE_NONE).values[:, 1:]
         dict_len, embed_size = dict.shape
@@ -18,29 +19,28 @@ class WordAttNet(nn.Module):
         unknown_word = np.zeros((1, embed_size))
         dict = torch.from_numpy(np.concatenate([unknown_word, dict], axis=0).astype(np.float))
 
-        self.word_weight = nn.Parameter(torch.Tensor(2 * hidden_size, 2 * hidden_size))
-        self.word_bias = nn.Parameter(torch.Tensor(1, 2 * hidden_size))
-        self.context_weight = nn.Parameter(torch.Tensor(2 * hidden_size, 1))
+        self.word_weight = nn.Parameter(torch.Tensor(word_feature_size,word_feature_size))
+        self.word_bias = nn.Parameter(torch.Tensor(1,word_feature_size))
+        self.context_weight = nn.Parameter(torch.Tensor(word_feature_size, 1))
 
         self.lookup = nn.Embedding(num_embeddings=dict_len, embedding_dim=embed_size).from_pretrained(dict)
-        self.gru = nn.GRU(embed_size, hidden_size, bidirectional=True)
         self._create_weights(mean=0.0, std=0.05)
 
     def _create_weights(self, mean=0.0, std=0.05):
 
         self.word_weight.data.normal_(mean, std)
         self.context_weight.data.normal_(mean, std)
+        self.word_bias.data.normal_(mean, std)
 
-    def forward(self, input, hidden_state):
+    def forward(self, input):
 
-        output = self.lookup(input)
-        f_output, h_output = self.gru(output.float(), hidden_state)  # feature output and hidden state output
+        f_output = self.lookup(input)
         output = matrix_mul(f_output, self.word_weight, self.word_bias)
         output = matrix_mul(output, self.context_weight).permute(1,0)
-        output = F.softmax(output)
-        output = element_wise_mul(f_output,output.permute(1,0))
+        attn_score = F.softmax(output,dim=1)
+        output = element_wise_mul(f_output,attn_score.permute(1,0))
 
-        return output, h_output
+        return output,attn_score
 
 
 if __name__ == "__main__":
