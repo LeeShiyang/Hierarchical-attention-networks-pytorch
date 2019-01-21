@@ -49,7 +49,7 @@ def train(opt):
                        "drop_last": True}
     test_params = {"batch_size": opt.batch_size,
                    "shuffle": False,
-                   "drop_last": True}
+                   "drop_last": False}
 
     max_word_length, max_sent_length = get_max_lengths(opt.train_set)
     training_set = MyDataset(opt.train_set, opt.word2vec_path, max_sent_length, max_word_length)
@@ -57,7 +57,7 @@ def train(opt):
     test_set = MyDataset(opt.test_set, opt.word2vec_path, max_sent_length, max_word_length)
     test_generator = DataLoader(test_set, **test_params)
 
-    model = HierAttNet(opt.word_feature_size, opt.sent_feature_size, opt.batch_size, training_set.num_classes,
+    model = HierAttNet(opt.word_feature_size, opt.sent_feature_size,training_set.num_classes,
                        opt.word2vec_path, max_sent_length, max_word_length)
 
 
