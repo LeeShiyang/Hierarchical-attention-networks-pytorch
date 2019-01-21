@@ -21,13 +21,13 @@ def get_args():
     parser.add_argument("--num_epoches", type=int, default=100)
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument("--momentum", type=float, default=0.9)
-    parser.add_argument("--word_hidden_size", type=int, default=50)
-    parser.add_argument("--sent_hidden_size", type=int, default=50)
+    parser.add_argument("--word_feature_size", type=int, default=50)
+    parser.add_argument("--sent_feature_size", type=int, default=50)
     parser.add_argument("--es_min_delta", type=float, default=0.0,
                         help="Early stopping's parameter: minimum change loss to qualify as an improvement")
     parser.add_argument("--es_patience", type=int, default=5,
                         help="Early stopping's parameter: number of epochs with no improvement after which training will be stopped. Set to 0 to disable this technique.")
-    parser.add_argument("--train_set", type=str, default="data/train.csv")
+    parser.add_argument("--train_set", type=str, default="data/test.csv")
     parser.add_argument("--test_set", type=str, default="data/test.csv")
     parser.add_argument("--test_interval", type=int, default=1, help="Number of epoches between testing phases")
     parser.add_argument("--word2vec_path", type=str, default="data/glove.6B.50d.txt")
@@ -49,7 +49,7 @@ def train(opt):
                        "drop_last": True}
     test_params = {"batch_size": opt.batch_size,
                    "shuffle": False,
-                   "drop_last": False}
+                   "drop_last": True}
 
     max_word_length, max_sent_length = get_max_lengths(opt.train_set)
     training_set = MyDataset(opt.train_set, opt.word2vec_path, max_sent_length, max_word_length)
@@ -57,7 +57,7 @@ def train(opt):
     test_set = MyDataset(opt.test_set, opt.word2vec_path, max_sent_length, max_word_length)
     test_generator = DataLoader(test_set, **test_params)
 
-    model = HierAttNet(opt.word_hidden_size, opt.sent_hidden_size, opt.batch_size, training_set.num_classes,
+    model = HierAttNet(opt.word_feature_size, opt.sent_feature_size, opt.batch_size, training_set.num_classes,
                        opt.word2vec_path, max_sent_length, max_word_length)
 
 
@@ -82,8 +82,7 @@ def train(opt):
                 feature = feature.cuda()
                 label = label.cuda()
             optimizer.zero_grad()
-            model._init_hidden_state()
-            predictions = model(feature)
+            predictions,attn_score = model(feature)
             loss = criterion(predictions, label)
             loss.backward()
             optimizer.step()
@@ -97,6 +96,7 @@ def train(opt):
                 loss, training_metrics["accuracy"]))
             writer.add_scalar('Train/Loss', loss, epoch * num_iter_per_epoch + iter)
             writer.add_scalar('Train/Accuracy', training_metrics["accuracy"], epoch * num_iter_per_epoch + iter)
+
         if epoch % opt.test_interval == 0:
             model.eval()
             loss_ls = []
@@ -108,8 +108,7 @@ def train(opt):
                     te_feature = te_feature.cuda()
                     te_label = te_label.cuda()
                 with torch.no_grad():
-                    model._init_hidden_state(num_sample)
-                    te_predictions = model(te_feature)
+                    te_predictions,te_attn_score = model(te_feature)
                 te_loss = criterion(te_predictions, te_label)
                 loss_ls.append(te_loss * num_sample)
                 te_label_ls.extend(te_label.clone().cpu())
