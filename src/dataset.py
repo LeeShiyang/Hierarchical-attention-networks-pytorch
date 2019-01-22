@@ -49,7 +49,10 @@ class MyDataset(Dataset):
         self.labels = labels
         self.label_name = label_name
         data = open(dict_path,'rb')
-        self.dict = pickle.load(data)
+        self.index_dict = pickle.load(data)
+        self.vocab_dict = {}
+        for index,value in enumerate(self.index_dict):
+            self.vocab_dict[value] = index
 
         print('max_length_sentences',max_length_sentences)
         print('max_length_word',max_length_word)
@@ -65,7 +68,7 @@ class MyDataset(Dataset):
         label = self.labels[index]
         text = self.texts[index]
         document_encode = [
-            [self.dict.index(word) if word in self.dict else -1 for word in sentences] for sentences
+            [self.vocab_dict[word] if word in self.index_dict else -1 for word in sentences] for sentences
             in text]
 
         for sentences in document_encode:
@@ -89,5 +92,5 @@ class MyDataset(Dataset):
 
 if __name__ == '__main__':
     test = MyDataset(data_path="/disk/home/klee/data/cs_merged_tokenized_superspan_HANs.txt", label_path='/disk/home/klee/data/cs_merged_label',dict_path="/disk/home/klee/data/cs_merged_tokenized_dictionary.bin")
-    doc = test[0]
+    print(test[0])
     print (test.__getitem__(index=1)[0].shape)

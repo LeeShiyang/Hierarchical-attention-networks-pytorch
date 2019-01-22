@@ -35,7 +35,7 @@ class HierAttNet(nn.Module):
         self.sent_feature_size = sent_feature_size
         self.max_sent_length = max_sent_length
         self.max_word_length = max_word_length
-        self.word_att_net = WordAttNet(feature_path, dict,word_feature_size)
+        self.word_att_net = WordAttNet(feature_path, dict)
         self.sent_att_net = SentAttNet(sent_feature_size, word_feature_size)
         Nv_len = 6
         node_num = 4

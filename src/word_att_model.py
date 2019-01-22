@@ -13,25 +13,28 @@ import pickle
 torch.set_default_dtype(torch.float64)
 
 class WordAttNet(nn.Module):
-    def __init__(self, feature_path,dict_path, word_feature_size=4):
+    def __init__(self, feature_path,dict_path):
         super(WordAttNet, self).__init__()
 
         data = open(dict_path,'rb')
-        dict = pickle.load(data)
-
+        index_dict = pickle.load(data)
+        vocab_dict = {}
+        for index,value in enumerate(index_dict):
+            vocab_dict[value] = index
 
         data = open(feature_path,'rb')
         mapping = pickle.load(data)
-        dict_len = len(dict)
-        feature = np.zeros((dict_len, word_feature_size))
 
+
+        dict_len = len(index_dict)
+        word_feature_size = len(mapping[index_dict[0]])
+
+
+        feature = np.zeros((dict_len, word_feature_size))
         for key, value in mapping.items():
-            index = dict.index(key)
+            index = vocab_dict[key]
             feature[index] = value
 
-
-        import pdb;
-        pdb.set_trace()
         dict_len += 1
 
         unknown_word = np.zeros((1, word_feature_size))
@@ -41,10 +44,12 @@ class WordAttNet(nn.Module):
         self.word_bias = nn.Parameter(torch.Tensor(1,word_feature_size))
         self.context_weight = nn.Parameter(torch.Tensor(word_feature_size, 1))
         self.dict_len = dict_len
-        self.embed_size = embed_size
-        self.lookup = nn.Embedding(num_embeddings=dict_len, embedding_dim=embed_size).from_pretrained(feature)
+        self.embed_size = word_feature_size
+        self.lookup = nn.Embedding(num_embeddings=dict_len, embedding_dim=self.embed_size).from_pretrained(feature)
+        self.lookup.weight.requires_grad = False
         self._create_weights(mean=0.0, std=0.05)
-
+        import pdb;
+        pdb.set_trace()
     def _create_weights(self, mean=0.0, std=0.05):
 
         self.word_weight.data.normal_(mean, std)
