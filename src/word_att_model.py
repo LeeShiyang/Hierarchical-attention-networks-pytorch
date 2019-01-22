@@ -4,8 +4,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#from src.utils import matrix_mul, element_wise_mul
-from utils import matrix_mul, element_wise_mul
+from src.utils import matrix_mul, element_wise_mul
+# from utils import matrix_mul, element_wise_mul
 import pandas as pd
 import numpy as np
 import csv
@@ -48,8 +48,6 @@ class WordAttNet(nn.Module):
         self.lookup = nn.Embedding(num_embeddings=dict_len, embedding_dim=self.embed_size).from_pretrained(feature)
         self.lookup.weight.requires_grad = False
         self._create_weights(mean=0.0, std=0.05)
-        import pdb;
-        pdb.set_trace()
     def _create_weights(self, mean=0.0, std=0.05):
 
         self.word_weight.data.normal_(mean, std)

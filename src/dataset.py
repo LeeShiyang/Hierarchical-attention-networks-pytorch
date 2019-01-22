@@ -54,11 +54,12 @@ class MyDataset(Dataset):
         for index,value in enumerate(self.index_dict):
             self.vocab_dict[value] = index
 
-        print('max_length_sentences',max_length_sentences)
-        print('max_length_word',max_length_word)
         self.max_length_sentences = max_length_sentences
         self.max_length_word = max_length_word
         self.num_classes = len(self.label_name)
+        print('max_length_sentences',max_length_sentences)
+        print('max_length_word',max_length_word)
+        print('num_classes: ',self.num_classes)
 
     def __len__(self):
         return len(self.labels)

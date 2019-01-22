@@ -21,8 +21,8 @@ def get_args():
     parser.add_argument("--num_epoches", type=int, default=100)
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument("--momentum", type=float, default=0.9)
-    parser.add_argument("--word_feature_size", type=int, default=50)
-    parser.add_argument("--sent_feature_size", type=int, default=50)
+    parser.add_argument("--word_feature_size", type=int, default=4)
+    parser.add_argument("--sent_feature_size", type=int, default=4)
     parser.add_argument("--es_min_delta", type=float, default=0.0,
                         help="Early stopping's parameter: minimum change loss to qualify as an improvement")
     parser.add_argument("--es_patience", type=int, default=5,
@@ -56,13 +56,11 @@ def train(opt):
 
     training_set = MyDataset(opt.train_data,opt.train_label, opt.dict)
     training_generator = DataLoader(training_set, **training_params)
-    import pdb;
-    pdb.set_trace()
     test_set = training_set #MyDataset(opt.test_data,opt.test_label ,opt.word2vec_path)
     test_generator = training_generator #DataLoader(test_set, **test_params)
 
-    model = HierAttNet(opt.word_feature_size, opt.sent_feature_size,
-    opt.feature_path, training_set.dict, training_set.max_sent_length, training_set.max_word_length)
+    model = HierAttNet(opt.sent_feature_size,
+    opt.feature_path, opt.dict, training_set.max_length_sentences, training_set.max_length_word)
 
 
     if os.path.isdir(opt.log_path):
@@ -85,10 +83,10 @@ def train(opt):
                 feature = feature.cuda()
                 label = label.cuda()
             optimizer.zero_grad()
-            import pdb;
-            pdb.set_trace()
             predictions,attn_score = model(feature)
             loss = criterion(predictions, label)
+            import pdb;
+            pdb.set_trace
             loss.backward()
             optimizer.step()
             training_metrics = get_evaluation(label.cpu().numpy(), predictions.cpu().detach().numpy(), list_metrics=["accuracy"])

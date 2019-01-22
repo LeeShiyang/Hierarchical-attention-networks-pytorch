@@ -14,8 +14,6 @@ def compute_score(doc_index,attn_score,dict_len,node_score,node_index,similarity
 
     node_num = node_score.size(0)
     Nv_len = node_score.size(1)
-    import pdb;
-    pdb.set_trace()
     final_score = torch.zeros(batch_size,node_num).cuda()
     for i in range(batch_size):
         for j in range(node_num):
@@ -27,18 +25,17 @@ def compute_score(doc_index,attn_score,dict_len,node_score,node_index,similarity
     return final_score
 
 class HierAttNet(nn.Module):
-    def __init__(self, word_feature_size, sent_feature_size, feature_path,dict
+    def __init__(self, sent_feature_size, feature_path,dict,
                  max_sent_length, max_word_length):
         super(HierAttNet, self).__init__()
 
-        self.word_feature_size = word_feature_size
         self.sent_feature_size = sent_feature_size
         self.max_sent_length = max_sent_length
         self.max_word_length = max_word_length
         self.word_att_net = WordAttNet(feature_path, dict)
-        self.sent_att_net = SentAttNet(sent_feature_size, word_feature_size)
+        self.sent_att_net = SentAttNet(sent_feature_size)
         Nv_len = 6
-        node_num = 4
+        node_num = 34
         node_score = torch.rand(size = (node_num,Nv_len)).cuda()
         self.node_score = F.normalize(node_score, p=1, dim=1)
         self.node_index = torch.tensor([1121,732,85,258,884,1935],dtype = torch.int32).cuda()
@@ -63,11 +60,12 @@ class HierAttNet(nn.Module):
             output, word_attn_score[idx] = self.word_att_net(i.permute(1, 0))
             output_list.append(output)
         output = torch.cat(output_list, 0)
-        output, sent_attn_score = self.sent_att_net(output)
+        sent_attn_score = self.sent_att_net(output)
         attn_score = word_attn_score.permute(2,1,0)*sent_attn_score
         doc_index = input.permute(1,0,2).view(batch_size,-1)
         attn_score = attn_score.permute(1,2,0).contiguous().view(batch_size,-1)
 
         final_score = compute_score(doc_index,attn_score,self.word_att_net.dict_len,self.node_score,self.node_index,self.similarity_mat)
-
+        # import pdb;
+        # pdb.set_trace()
         return final_score,attn_score
