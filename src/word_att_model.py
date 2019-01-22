@@ -22,7 +22,8 @@ class WordAttNet(nn.Module):
         self.word_weight = nn.Parameter(torch.Tensor(word_feature_size,word_feature_size))
         self.word_bias = nn.Parameter(torch.Tensor(1,word_feature_size))
         self.context_weight = nn.Parameter(torch.Tensor(word_feature_size, 1))
-
+        self.dict_len = dict_len
+        self.embed_size = embed_size
         self.lookup = nn.Embedding(num_embeddings=dict_len, embedding_dim=embed_size).from_pretrained(dict)
         self._create_weights(mean=0.0, std=0.05)
 
