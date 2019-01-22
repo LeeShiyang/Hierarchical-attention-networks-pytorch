@@ -27,10 +27,13 @@ def get_args():
                         help="Early stopping's parameter: minimum change loss to qualify as an improvement")
     parser.add_argument("--es_patience", type=int, default=5,
                         help="Early stopping's parameter: number of epochs with no improvement after which training will be stopped. Set to 0 to disable this technique.")
-    parser.add_argument("--train_set", type=str, default="data/test.csv")
-    parser.add_argument("--test_set", type=str, default="data/test.csv")
+    parser.add_argument("--train_data", type=str, default="/disk/home/klee/data/cs_merged_tokenized_superspan_HANs.txt")
+    parser.add_argument("--train_label", type=str, default="/disk/home/klee/data/cs_merged_label")
+    parser.add_argument("--test_data", type=str, default="/disk/home/klee/data/cs_merged_tokenized_superspan_HANs.txt")
+    parser.add_argument("--test_label", type=str, default="/disk/home/klee/data/cs_merged_label")
     parser.add_argument("--test_interval", type=int, default=1, help="Number of epoches between testing phases")
-    parser.add_argument("--word2vec_path", type=str, default="data/glove.6B.50d.txt")
+    parser.add_argument("--dict", type=str, default="/disk/home/klee/data/cs_merged_tokenized_dictionary.bin")
+    parser.add_argument("--feature_path", type=str, default="tensorboard/han_voc")
     parser.add_argument("--log_path", type=str, default="tensorboard/han_voc")
     parser.add_argument("--saved_path", type=str, default="trained_models")
     args = parser.parse_args()
@@ -51,23 +54,21 @@ def train(opt):
                    "shuffle": False,
                    "drop_last": False}
 
-    max_word_length, max_sent_length = get_max_lengths(opt.train_set)
-    print('max_word_length: ',max_word_length)
-    print('max_sent_length: ',max_sent_length)
-    training_set = MyDataset(opt.train_set, opt.word2vec_path, max_sent_length, max_word_length)
+    training_set = MyDataset(opt.train_data,opt.train_label, opt.dict)
     training_generator = DataLoader(training_set, **training_params)
-    test_set = MyDataset(opt.test_set, opt.word2vec_path, max_sent_length, max_word_length)
-    test_generator = DataLoader(test_set, **test_params)
+    import pdb;
+    pdb.set_trace()
+    test_set = training_set #MyDataset(opt.test_data,opt.test_label ,opt.word2vec_path)
+    test_generator = training_generator #DataLoader(test_set, **test_params)
 
-    model = HierAttNet(opt.word_feature_size, opt.sent_feature_size,training_set.num_classes,
-                       opt.word2vec_path, max_sent_length, max_word_length)
+    model = HierAttNet(opt.word_feature_size, opt.sent_feature_size,
+    opt.feature_path, training_set.max_sent_length, training_set.max_word_length)
 
 
     if os.path.isdir(opt.log_path):
         shutil.rmtree(opt.log_path)
     os.makedirs(opt.log_path)
     writer = SummaryWriter(opt.log_path)
-    # writer.add_graph(model, torch.zeros(opt.batch_size, max_sent_length, max_word_length))
 
     if torch.cuda.is_available():
         model.cuda()
@@ -84,6 +85,8 @@ def train(opt):
                 feature = feature.cuda()
                 label = label.cuda()
             optimizer.zero_grad()
+            import pdb;
+            pdb.set_trace()
             predictions,attn_score = model(feature)
             loss = criterion(predictions, label)
             loss.backward()
