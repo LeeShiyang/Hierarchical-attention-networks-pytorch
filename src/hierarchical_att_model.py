@@ -7,7 +7,7 @@ from src.sent_att_model import SentAttNet
 from src.word_att_model import WordAttNet
 import torch.nn.functional as F
 
-def compute_score(doc_index,attn_score,dict_len,node_score,node_index,similarity_mat):
+def compute_score(doc_index,attn_score,dict_len,node_score,similarity_mat):
 
     batch_size = doc_index.size(0)
     Nd_len = doc_index.size(1)
@@ -38,13 +38,10 @@ class HierAttNet(nn.Module):
         node_num = 34
         node_score = torch.rand(size = (node_num,Nv_len)).cuda()
         self.node_score = F.normalize(node_score, p=1, dim=1)
-        self.node_index = torch.tensor([1121,732,85,258,884,1935],dtype = torch.int32).cuda()
         self.similarity_mat =  torch.DoubleTensor(self.word_att_net.dict_len,Nv_len).uniform_(-1, 1).cuda()
         # import pdb;
         # pdb.set_trace()
         self.similarity_mat[0,:] = 0
-        for id,index in enumerate(self.node_index):
-            self.similarity_mat[index] = 1
 
 
 
@@ -65,7 +62,5 @@ class HierAttNet(nn.Module):
         doc_index = input.permute(1,0,2).view(batch_size,-1)
         attn_score = attn_score.permute(1,2,0).contiguous().view(batch_size,-1)
 
-        final_score = compute_score(doc_index,attn_score,self.word_att_net.dict_len,self.node_score,self.node_index,self.similarity_mat)
-        # import pdb;
-        # pdb.set_trace()
+        final_score = compute_score(doc_index,attn_score,self.word_att_net.dict_len,self.node_score,self.similarity_mat)
         return final_score,attn_score
