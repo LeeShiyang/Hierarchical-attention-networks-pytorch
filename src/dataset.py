@@ -6,24 +6,34 @@ from torch.utils.data.dataset import Dataset
 import csv
 from nltk.tokenize import sent_tokenize, word_tokenize
 import numpy as np
-
+import pickle
 
 class MyDataset(Dataset):
 
-    def __init__(self, data_path,label_path, dict_path, max_length_sentences=30, max_length_word=35):
+    def __init__(self, data_path,label_path, dict_path):
         super(MyDataset, self).__init__()
 
         texts, labels = [],[]
+        max_length_sentences = 0
+        max_length_word = 0
+        count = 0
+        max_count = 0
         with open(data_path) as txt_file:
             reader = txt_file.readlines()
             for line in reader:
                 super_con = []
-                for super_concept in line.strip().split('.'):
+                super_concepts = line.strip().split('. ')
+                if(len(super_concepts) > max_length_sentences):
+                    max_length_sentences = len(super_concepts)
+                    max_count = count
+                for super_concept in super_concepts:
                     concept = super_concept.split(' ')
-                    if '' in concept:
-                        concept.remove('')
+                    if(len(concept) > max_length_word):
+                        max_length_word = len(concept)
                     super_con.append(concept)
                 texts.append(super_con)
+                count += 1
+
         label_name = []
 
         with open(label_path) as txt_file:
@@ -35,32 +45,28 @@ class MyDataset(Dataset):
                 label_id = label_name.index(label_txt)
                 labels.append(label_id)
 
-        import pdb;
-        pdb.set_trace()
-
-
-
-
         self.texts = texts
         self.labels = labels
         self.label_name = label_name
-        self.dict = pd.read_csv(filepath_or_buffer=dict_path, header=None, sep=" ", quoting=csv.QUOTE_NONE,
-                                usecols=[0]).values
-        self.dict = [word[0] for word in self.dict]
+        data = open(dict_path,'rb')
+        self.dict = pickle.load(data)
+
+        print('max_length_sentences',max_length_sentences)
+        print('max_length_word',max_length_word)
         self.max_length_sentences = max_length_sentences
         self.max_length_word = max_length_word
-        self.num_classes = len(set(self.labels))
+        self.num_classes = len(self.label_name)
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, index):
+
         label = self.labels[index]
         text = self.texts[index]
         document_encode = [
-            [self.dict.index(word) if word in self.dict else -1 for word in word_tokenize(text=sentences)] for sentences
-            in
-            sent_tokenize(text=text)]
+            [self.dict.index(word) if word in self.dict else -1 for word in sentences] for sentences
+            in text]
 
         for sentences in document_encode:
             if len(sentences) < self.max_length_word:
@@ -82,5 +88,6 @@ class MyDataset(Dataset):
 
 
 if __name__ == '__main__':
-    test = MyDataset(data_path="/disk/home/klee/data/cs_merged_tokenized_text_HAN.txt", label_path='/disk/home/klee/data/cs_merged_label',dict_path="../data/glove.6B.50d.txt")
+    test = MyDataset(data_path="/disk/home/klee/data/cs_merged_tokenized_superspan_HANs.txt", label_path='/disk/home/klee/data/cs_merged_label',dict_path="/disk/home/klee/data/cs_merged_tokenized_dictionary.bin")
+    doc = test[0]
     print (test.__getitem__(index=1)[0].shape)

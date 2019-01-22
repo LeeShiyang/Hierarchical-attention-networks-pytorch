@@ -27,7 +27,7 @@ def compute_score(doc_index,attn_score,dict_len,node_score,node_index,similarity
     return final_score
 
 class HierAttNet(nn.Module):
-    def __init__(self, word_feature_size, sent_feature_size, num_classes, pretrained_word2vec_path,
+    def __init__(self, word_feature_size, sent_feature_size, feature_path,dict
                  max_sent_length, max_word_length):
         super(HierAttNet, self).__init__()
 
@@ -35,8 +35,8 @@ class HierAttNet(nn.Module):
         self.sent_feature_size = sent_feature_size
         self.max_sent_length = max_sent_length
         self.max_word_length = max_word_length
-        self.word_att_net = WordAttNet(pretrained_word2vec_path, word_feature_size)
-        self.sent_att_net = SentAttNet(sent_feature_size, word_feature_size, num_classes)
+        self.word_att_net = WordAttNet(feature_path, dict,word_feature_size)
+        self.sent_att_net = SentAttNet(sent_feature_size, word_feature_size)
         Nv_len = 6
         node_num = 4
         node_score = torch.rand(size = (node_num,Nv_len)).cuda()

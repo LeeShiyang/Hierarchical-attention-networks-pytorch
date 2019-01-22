@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument("--test_label", type=str, default="/disk/home/klee/data/cs_merged_label")
     parser.add_argument("--test_interval", type=int, default=1, help="Number of epoches between testing phases")
     parser.add_argument("--dict", type=str, default="/disk/home/klee/data/cs_merged_tokenized_dictionary.bin")
-    parser.add_argument("--feature_path", type=str, default="tensorboard/han_voc")
+    parser.add_argument("--feature_path", type=str, default="/disk/home/klee/data/cs_merged_tokenized_concept_feature.bin")
     parser.add_argument("--log_path", type=str, default="tensorboard/han_voc")
     parser.add_argument("--saved_path", type=str, default="trained_models")
     args = parser.parse_args()
@@ -62,7 +62,7 @@ def train(opt):
     test_generator = training_generator #DataLoader(test_set, **test_params)
 
     model = HierAttNet(opt.word_feature_size, opt.sent_feature_size,
-    opt.feature_path, training_set.max_sent_length, training_set.max_word_length)
+    opt.feature_path, training_set.dict, training_set.max_sent_length, training_set.max_word_length)
 
 
     if os.path.isdir(opt.log_path):
