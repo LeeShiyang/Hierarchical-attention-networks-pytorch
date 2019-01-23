@@ -17,27 +17,24 @@ torch.set_default_dtype(torch.float64)
 #
 
 class WordAttNet(nn.Module):
-    def __init__(self, feature_path, dict_path, max_vocab, use_cuda):
+    def __init__(self, feature_path, dict_path, max_vocab, use_cuda, dataset):
         super(WordAttNet, self).__init__()
 
-        data = open(dict_path, 'rb')
-        index_dict = pickle.load(data)[:max_vocab]
-        vocab_dict = {}
-        for index, value in enumerate(index_dict):
-            vocab_dict[value] = index
+        # data = open(dict_path, 'rb')
+        # index_dict = pickle.load(data)[:max_vocab]
+        # vocab_dict = {}
+        # for index, value in enumerate(index_dict):
+        #     vocab_dict[value] = index
 
-        data = open(feature_path, 'rb')
-        mapping = pickle.load(data)
+        mapping = pickle.load(open(feature_path, 'rb'))
 
-        dict_len = len(index_dict)
-        word_feature_size = len(mapping[index_dict[0]])
+        dict_len = len(dataset.index_dict)
+        word_feature_size = len(mapping[dataset.index_dict[2002]])
 
         feature = np.zeros((dict_len, word_feature_size))
-        has_index = 0
         for key, value in mapping.items():
-            if key in vocab_dict:
-                index = vocab_dict[key]
-                feature[index] = value
+            if key in dataset.vocab_dict:
+                feature[dataset.vocab_dict[key]] = value
 
         feature = normalize(feature, axis=0, norm='max')
         unknown_word = np.zeros((1, word_feature_size))

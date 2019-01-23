@@ -2,7 +2,6 @@
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
 import pickle
-from gensim.models import Word2Vec
 import numpy as np
 import torch
 import torch.nn as nn
@@ -10,6 +9,7 @@ from src.sent_att_model import SentAttNet
 from src.word_att_model import WordAttNet
 from src.utils import matrix_mul, element_wise_mul
 import torch.nn.functional as F
+import pandas as pd
 
 
 def create_embedding(mat):
@@ -22,13 +22,14 @@ def create_embedding(mat):
 class HierAttNet(nn.Module):
     def __init__(self, sent_feature_size, feature_path, dict,
                  max_sent_length, max_word_length,
-                 model_save_path, Vv_embedding_path, path_semanticsFile, max_vocab, use_cuda, class_idsFile):
+                 model_save_path, Vv_embedding_path, phi_vsFile, max_vocab, use_cuda, dataset, num_bins_woexactmatch):
         super(HierAttNet, self).__init__()
-
+        self.dataset = dataset
+        self.use_cuda = use_cuda
         self.sent_feature_size = sent_feature_size
         self.max_sent_length = max_sent_length
         self.max_word_length = max_word_length
-        self.word_att_net = WordAttNet(feature_path, dict, max_vocab, use_cuda)
+        self.word_att_net = WordAttNet(feature_path, dict, max_vocab, use_cuda, dataset)
         self.sent_att_net = SentAttNet(sent_feature_size)
         # Nv_len = 6
         # node_num = 34
@@ -40,12 +41,25 @@ class HierAttNet(nn.Module):
         # for id, index in enumerate(self.node_index):
         #     self.similarity_mat[index] = 1
 
-        self.model_gensim = Word2Vec.load(model_save_path)
+        self.model_gensim = self.dataset.model_gensim
         self.model_gensim.most_similar(self.model_gensim.wv.index2word[0])
         feature = self.model_gensim.wv.vectors_norm[:max_vocab]
         unknown_word = np.zeros((1, self.model_gensim.vector_size))
         feature = np.concatenate([unknown_word, feature], axis=0).astype(np.float)
         self.embedding = create_embedding(feature)
+
+        self.bin_midpoint = np.linspace(0.01, .99, num_bins_woexactmatch).tolist()
+        # add extra for exact match
+        bins_weight = [0]
+        for i in range(len(self.bin_midpoint)-1):
+            bins_weight.append((self.bin_midpoint[i] + self.bin_midpoint[i + 1])/2)
+        bins_weight.append(1)
+        bins_weight = torch.from_numpy(np.array(bins_weight).reshape(len(bins_weight), 1))
+        self.bin_weight = nn.Embedding(num_embeddings=len(bins_weight), embedding_dim=1)
+        self.bin_weight.weight.data.copy_(bins_weight)
+        self.bin_weight.weight.requires_grad = False
+        if use_cuda:
+            self.bin_weight = self.bin_weight.cuda()
         # feature = torch.from_numpy(feature)
         # self.embedding = nn.Embedding(num_embeddings=feature.shape[0], embedding_dim=feature.shape[1]).from_pretrained(feature)
         # self.embedding.weight.requires_grad = False
@@ -57,36 +71,28 @@ class HierAttNet(nn.Module):
                 self.Vv_embeddingT = self.Vv_embeddingT.cuda()
             self.Vv_embeddingT.requires_grad = False
         except Exception as e:
-            import ipdb; ipdb.set_trace()
+            import ipdb
+            ipdb.set_trace()
             raise e
-        # torch.DoubleTensor(self.word_att_net.dict_len, Nv_len).uniform_(-1, 1)
-        # create_embedding(Vv_embedding)
-        # Vv_embedding = torch.from_numpy(Vv_embedding)
-        # self.Vv_embedding = nn.Embedding(num_embeddings=Vv_embedding.shape[0], embedding_dim=Vv_embedding.shape[1]).from_pretrained(Vv_embedding)
-        # self.Vv_embedding.weight.requires_grad = False
 
-        path_semantics = pickle.load(open(path_semanticsFile, 'rb'))
-        self.path_semantics = torch.from_numpy(path_semantics.astype(np.float64))
+        phi_vs = pickle.load(open(phi_vsFile, 'rb'))
+        self.phi_vs = torch.from_numpy(phi_vs.astype(np.float64))
         if use_cuda:
-            self.path_semantics = self.path_semantics.cuda()
-        self.path_semantics.requires_grad = False
-        # create_embedding(path_semantics)
-        # path_semantics = torch.from_numpy(path_semantics)
-        # self.path_semantics = nn.Embedding(num_embeddings=path_semantics.shape[0], embedding_dim=path_semantics.shape[1]).from_pretrained(path_semantics)
-        # self.path_semantics.weight.requires_grad = False
+            self.phi_vs = self.phi_vs.cuda()
+        self.phi_vs.requires_grad = False
 
-    def forward(self, input, ImportanceFeatureMat, text):
-
+    def forward(self, input, ImportanceFeatureMat, labels):
         batch_size = input.size(0)
         word_attn_score = torch.zeros(self.max_sent_length, batch_size, self.max_word_length)
-        # if torch.cuda.is_available():
-        #     word_attn_score = word_attn_score.cuda()
+        if self.use_cuda:
+            word_attn_score = word_attn_score.cuda()
         output_list = []
 
         # iterate over: [sent ind, batch, word ind]
         for idx, i in enumerate(input.permute(1, 0, 2)):
             output, word_attn_score[idx] = self.word_att_net(i)
             output_list.append(output)
+
         # [batch, sent ind, word ind]
         word_attn_score = word_attn_score.permute(1, 0, 2)
         # [sent ind, batch, word ind]
@@ -100,31 +106,65 @@ class HierAttNet(nn.Module):
         attn_score = attn_score.contiguous().view(batch_size, -1)
         doc_index = input.view(batch_size, -1)
 
-        final_score = self.compute_score(doc_index, attn_score)
+        final_score = self.compute_score(doc_index, attn_score, labels)
         # import pdb;
         # pdb.set_trace()
         return final_score, attn_score
 
-    def compute_score(self, doc_index, attn_score):
-        import ipdb; ipdb.set_trace()
+    def doc_index2doc(self, t):
+        texts = [self.dataset.index_dict[i - 1] if i > 0 else '' for i in t.cpu().numpy()]
+        return texts
+
+    def compute_score(self, doc_index, attn_score, labels):
         # , dict_len, phi_vs, embedding, Vv_embedding
         batch_size = doc_index.size(0)
         Nd_len = doc_index.size(1)
         # similarity_mats = matrix_mul(self.embedding(doc_index), self.Vv_embeddingT)
 
-        node_num = self.path_semantics.size(0)
+        node_num = self.phi_vs.size(0)
         final_score = torch.zeros(batch_size, node_num)
+        if self.use_cuda:
+            final_score = final_score.cuda()
         # .cuda()
         for i in range(batch_size):
             # similarity_mats[i]
             similarity_mat = self.embedding(doc_index[i]).mm(self.Vv_embeddingT)
+            similarity_mat_digitized = np.digitize(similarity_mat.cpu().numpy(), self.bin_midpoint)
+            similarity_mat_digitized = torch.from_numpy(similarity_mat_digitized)
+            similarity_mat_digitized.requires_grad = False
+
+            if self.use_cuda:
+                similarity_mat_digitized = similarity_mat_digitized.cuda()
+            similarity_mat = self.bin_weight(similarity_mat_digitized).squeeze()
+
+            # - self.bin_weight.weight[0]
+            Vd = self.doc_index2doc(doc_index[i])
+
+            raw_word_attns = [i for i in list(zip(Vd, attn_score[i].data.cpu().numpy()))]
+            word_attns = [i for i in list(zip(Vd, attn_score[i].data.cpu().numpy())) if i[0]]
+
+            def get_similarity(j):
+                # get concept wise interaction matrix
+                # phi_v = self.phi_vs[j].cpu().numpy()
+                # Vv = [self.dataset.Vv[t] for t in phi_v.nonzero()[0]]
+                # sub_similarity_mat = similarity_mat.cpu().numpy()[:, phi_v.nonzero()[0]]
+                # sub_similarity_frame = pd.DataFrame(sub_similarity_mat, columns=Vv, index=Vd)
+                # pickle.dump(sub_similarity_frame, open('sub_similarity_frame_{}_{}.bin'.format(i,j), 'wb'))
+
+                # import ipdb; ipdb.set_trace()
+                similarity_by_concept = similarity_mat * self.phi_vs[j]
+                # similarity_by_concept, _ = similarity_by_concept.max(1)
+                similarity_by_concept = similarity_by_concept.sum(1)
+
+                return torch.sum(attn_score[i] * similarity_by_concept)
+
             for j in range(node_num):
                 try:
-                    # outprod_score = torch.ger(attn_score[i], self.path_semantics[j]).cuda()
-                    # final_score[i, j] = torch.sum(outprod_score * similarity_weighted_bynode)
-                    similarity_weighted_bynode = similarity_mat * self.path_semantics[j]
-                    similarity_weighted_bynode = similarity_weighted_bynode.sum(1)
-                    final_score[i, j] = torch.sum(attn_score[i] * similarity_weighted_bynode)
+                    # outprod_score = torch.ger(attn_score[i], self.phi_vs[j]).cuda()
+                    # final_score[i, j] = torch.sum(outprod_score * similarity_by_concept)
+                    final_score[i, j] = get_similarity(j)
                 except Exception as e:
                     pass
+            pass
+
         return final_score

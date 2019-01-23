@@ -2,6 +2,7 @@
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
 import pandas as pd
+from gensim.models import Word2Vec
 from torch.utils.data.dataset import Dataset
 import csv
 from nltk.tokenize import sent_tokenize, word_tokenize
@@ -9,8 +10,18 @@ import numpy as np
 import pickle
 
 
+def get_label(label):
+    try:
+        return eval(label.strip())[0]
+    except Exception as e:
+        pass
+
+    return label
+
+
 class MyDataset(Dataset):
-    def __init__(self, data_path, label_path, dict_path, ImportanceFeatureMatsFile, max_vocab, class_idsFile):
+    def __init__(self, data_path, label_path, dict_path, ImportanceFeatureMatsFile, max_vocab, class_idsFile, VvFile, model_save_path):
+        self.Vv = pickle.load(open(VvFile, 'rb'))
         super(MyDataset, self).__init__()
 
         texts, labels = [], []
@@ -18,16 +29,19 @@ class MyDataset(Dataset):
         max_length_word = 0
         count = 0
         docind_withMaxLength = 0
-        reader = open(data_path).readlines()
-        labels = open(label_path).readlines()
+        text_lines = open(data_path).readlines()
+        labels_lines = open(label_path).readlines()
+
+        self.model_gensim = Word2Vec.load(model_save_path)
 
         class_ids = pickle.load(open(class_idsFile, 'rb'))
         class_id2ind = {id: ind for ind, id in enumerate(class_ids)}
 
-        for line, label in zip(reader, labels):
-            label_txt = label.strip()
+        for line, label in zip(text_lines, labels_lines):
+            label = get_label(label.strip())
+
             if label in class_id2ind:
-                label_id = class_id2ind.get(label_txt)
+                label_id = class_id2ind.get(label)
                 labels.append(label_id)
 
                 super_con = []
@@ -43,13 +57,11 @@ class MyDataset(Dataset):
                 texts.append(super_con)
                 count += 1
 
-        import ipdb; ipdb.set_trace()
-
         self.texts = texts
         self.labels = labels
-        self.label_name = label_name
-        data = open(dict_path, 'rb')
-        self.index_dict = pickle.load(data)
+        self.labels_list = class_ids
+        self.class_id2ind = class_id2ind
+        self.index_dict = self.model_gensim.wv.index2word[:max_vocab]
         self.vocab_dict = {}
         for index, value in enumerate(self.index_dict[:max_vocab]):
             self.vocab_dict[value] = index
@@ -57,7 +69,7 @@ class MyDataset(Dataset):
         self.ImportanceFeatureMats = pickle.load(open(ImportanceFeatureMatsFile, 'rb'))
         self.max_length_sentences = max_length_sentences
         self.max_length_word = max_length_word
-        self.num_classes = len(self.label_name)
+        self.num_classes = len(self.class_id2ind)
         print('max_length_sentences', max_length_sentences)
         print('max_length_word', max_length_word)
         print('num_classes: ', self.num_classes)
