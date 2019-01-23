@@ -8,24 +8,33 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 import numpy as np
 import pickle
 
-class MyDataset(Dataset):
 
-    def __init__(self, data_path,label_path, dict_path):
+class MyDataset(Dataset):
+    def __init__(self, data_path, label_path, dict_path, ImportanceFeatureMatsFile, max_vocab, class_idsFile):
         super(MyDataset, self).__init__()
 
-        texts, labels = [],[]
+        texts, labels = [], []
         max_length_sentences = 0
         max_length_word = 0
         count = 0
-        max_count = 0
-        with open(data_path) as txt_file:
-            reader = txt_file.readlines()
-            for line in reader:
+        docind_withMaxLength = 0
+        reader = open(data_path).readlines()
+        labels = open(label_path).readlines()
+
+        class_ids = pickle.load(open(class_idsFile, 'rb'))
+        class_id2ind = {id: ind for ind, id in enumerate(class_ids)}
+
+        for line, label in zip(reader, labels):
+            label_txt = label.strip()
+            if label in class_id2ind:
+                label_id = class_id2ind.get(label_txt)
+                labels.append(label_id)
+
                 super_con = []
                 super_concepts = line.strip().split('. ')
                 if(len(super_concepts) > max_length_sentences):
                     max_length_sentences = len(super_concepts)
-                    max_count = count
+                    docind_withMaxLength = count
                 for super_concept in super_concepts:
                     concept = super_concept.split(' ')
                     if(len(concept) > max_length_word):
@@ -34,42 +43,38 @@ class MyDataset(Dataset):
                 texts.append(super_con)
                 count += 1
 
-        label_name = []
-
-        with open(label_path) as txt_file:
-            reader = txt_file.readlines()
-            for line in reader:
-                label_txt = line.strip()
-                if label_txt not in label_name:
-                    label_name.append(label_txt)
-                label_id = label_name.index(label_txt)
-                labels.append(label_id)
+        import ipdb; ipdb.set_trace()
 
         self.texts = texts
         self.labels = labels
         self.label_name = label_name
-        data = open(dict_path,'rb')
+        data = open(dict_path, 'rb')
         self.index_dict = pickle.load(data)
         self.vocab_dict = {}
-        for index,value in enumerate(self.index_dict):
+        for index, value in enumerate(self.index_dict[:max_vocab]):
             self.vocab_dict[value] = index
 
+        self.ImportanceFeatureMats = pickle.load(open(ImportanceFeatureMatsFile, 'rb'))
         self.max_length_sentences = max_length_sentences
         self.max_length_word = max_length_word
         self.num_classes = len(self.label_name)
-        print('max_length_sentences',max_length_sentences)
-        print('max_length_word',max_length_word)
-        print('num_classes: ',self.num_classes)
+        print('max_length_sentences', max_length_sentences)
+        print('max_length_word', max_length_word)
+        print('num_classes: ', self.num_classes)
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, index):
-
         label = self.labels[index]
         text = self.texts[index]
+
+        ImportanceFeatureMat = self.ImportanceFeatureMats[index]
+        ImportanceFeatureMat_padded = np.zeros((self.max_length_sentences, ImportanceFeatureMat.shape[1]))
+        ImportanceFeatureMat_padded[:ImportanceFeatureMat.shape[0]] = ImportanceFeatureMat
+
         document_encode = [
-            [self.vocab_dict[word] if word in self.index_dict else -1 for word in sentences] for sentences
+            [self.vocab_dict[word] if word in self.vocab_dict else -1 for word in sentences] for sentences
             in text]
 
         for sentences in document_encode:
@@ -83,15 +88,15 @@ class MyDataset(Dataset):
             document_encode.extend(extended_sentences)
 
         document_encode = [sentences[:self.max_length_word] for sentences in document_encode][
-                          :self.max_length_sentences]
+            :self.max_length_sentences]
 
         document_encode = np.stack(arrays=document_encode, axis=0)
         document_encode += 1
 
-        return document_encode.astype(np.int64), label
+        return document_encode.astype(np.int64), ImportanceFeatureMat_padded, label, text
 
 
 if __name__ == '__main__':
-    test = MyDataset(data_path="/disk/home/klee/data/cs_merged_tokenized_superspan_HANs.txt", label_path='/disk/home/klee/data/cs_merged_label',dict_path="/disk/home/klee/data/cs_merged_tokenized_dictionary.bin")
+    test = MyDataset(data_path="/disk/home/klee/data/cs_merged_tokenized_superspan_HANs.txt", label_path='/disk/home/klee/data/cs_merged_label', dict_path="/disk/home/klee/data/cs_merged_tokenized_dictionary.bin")
     print(test[0])
-    print (test.__getitem__(index=1)[0].shape)
+    print(test.__getitem__(index=1)[0].shape)
