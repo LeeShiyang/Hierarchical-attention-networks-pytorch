@@ -82,7 +82,11 @@ class MyDataset(Dataset):
         text = self.texts[index]
 
         ImportanceFeatureMat = self.ImportanceFeatureMats[index]
-        ImportanceFeatureMat_padded = np.zeros((self.max_length_sentences, ImportanceFeatureMat.shape[1]))
+        try:
+            ImportanceFeatureMat_padded = np.zeros((self.max_length_sentences, ImportanceFeatureMat.shape[1]))
+        except Exception as e:
+            import ipdb; ipdb.set_trace()
+            raise e
         ImportanceFeatureMat_padded[:ImportanceFeatureMat.shape[0]] = ImportanceFeatureMat
 
         document_encode = [

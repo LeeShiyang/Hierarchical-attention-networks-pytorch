@@ -22,6 +22,7 @@ parser.add_argument("--lr", type=float, default=0.1)
 parser.add_argument("--momentum", type=float, default=0.9)
 parser.add_argument("--word_feature_size", type=int, default=4)
 parser.add_argument("--sent_feature_size", type=int, default=3)
+parser.add_argument("--num_bins", type=int, default=10)
 parser.add_argument("--es_min_delta", type=float, default=0.0,
                     help="Early stopping's parameter: minimum change loss to qualify as an improvement")
 parser.add_argument("--es_patience", type=int, default=5,
@@ -36,7 +37,7 @@ parser.add_argument("--feature_path", type=str, default="/disk/home/klee/data/cs
 parser.add_argument("--log_path", type=str, default="tensorboard/han_voc")
 parser.add_argument("--saved_path", type=str, default="trained_models")
 args = parser.parse_args()
-use_cuda = False
+use_cuda = True
 
 tokenized_text = '/disk/home/klee/data/{}_merged_tokenized'.format(args.arg1)
 supersequence_path = tokenized_text + '_superspan_sequence.json'
@@ -45,10 +46,14 @@ phrases2feature_vector_path = tokenized_text + '_phrases2feature_vector.bin'
 ImportanceFeatureMatsFile = tokenized_text + '_ImportanceFeatureMatsFile.bin'
 model_save_path = supersequence_path + '_embedding.bin'
 Vv_embedding_path = tokenized_text + '_Vv_embedding.bin'
-path_semanticsFile = tokenized_text + '_path_semantics.bin'
+path_semanticsFile = tokenized_text + '_basic_semantics.bin'
 class_idsFile = tokenized_text + '_class_ids.bin'
+VvFile = tokenized_text + '_Vv.bin'
 max_vocab = 500000
-# torch.cuda.set_device(1)
+
+if use_cuda:
+    torch.cuda.set_device(1)
+
 
 def train(opt):
     if use_cuda:
@@ -65,14 +70,14 @@ def train(opt):
                    "shuffle": False,
                    "drop_last": False}
 
-    training_set = MyDataset(opt.train_data, opt.train_label, opt.dict, ImportanceFeatureMatsFile, max_vocab, class_idsFile)
+    training_set = MyDataset(opt.train_data, opt.train_label, opt.dict, ImportanceFeatureMatsFile, max_vocab, class_idsFile, VvFile, model_save_path)
     training_generator = DataLoader(training_set, **training_params)
     test_set = training_set  # MyDataset(opt.test_data,opt.test_label ,opt.word2vec_path)
     test_generator = training_generator  # DataLoader(test_set, **test_params)
 
-    model = HierAttNet(opt.sent_feature_size,
-                       phrases2feature_vector_path, opt.dict, training_set.max_length_sentences, training_set.max_length_word,
-                       model_save_path, Vv_embedding_path, path_semanticsFile, max_vocab, use_cuda, class_idsFile)
+    model = HierAttNet(opt.sent_feature_size, phrases2feature_vector_path, opt.dict,
+                       training_set.max_length_sentences, training_set.max_length_word,
+                       model_save_path, Vv_embedding_path, path_semanticsFile, max_vocab, use_cuda, training_set, opt.num_bins)
 
     if os.path.isdir(opt.log_path):
         shutil.rmtree(opt.log_path)
@@ -95,18 +100,18 @@ def train(opt):
                 ImportanceFeatureMat = ImportanceFeatureMat.cuda()
                 label = label.cuda()
             optimizer.zero_grad()
-            predictions, attn_score = model(feature, ImportanceFeatureMat, text)
+            predictions, attn_score = model(feature, ImportanceFeatureMat, label)
             loss = criterion(predictions, label)
             loss.backward()
             optimizer.step()
-            training_metrics = get_evaluation(label.cpu().numpy(), predictions.cpu().detach().numpy(), list_metrics=["accuracy"])
-            print("Epoch: {}/{}, Iteration: {}/{}, Lr: {}, Loss: {}, Accuracy: {}".format(
+            training_metrics = get_evaluation(label.cpu().numpy(), predictions.cpu().detach().numpy(), list_metrics=["accuracy", "top K accuracy"])
+            print("Epoch: {}/{}, Iteration: {}/{}, Lr: {}, Loss: {}, top K accuracy: {}".format(
                 epoch + 1,
                 opt.num_epoches,
                 iter + 1,
                 num_iter_per_epoch,
                 optimizer.param_groups[0]['lr'],
-                loss, training_metrics["accuracy"]))
+                loss, training_metrics["top K accuracy"]))
             writer.add_scalar('Train/Loss', loss, epoch * num_iter_per_epoch + iter)
             writer.add_scalar('Train/Accuracy', training_metrics["accuracy"], epoch * num_iter_per_epoch + iter)
 

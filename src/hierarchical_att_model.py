@@ -129,13 +129,12 @@ class HierAttNet(nn.Module):
         for i in range(batch_size):
             # similarity_mats[i]
             similarity_mat = self.embedding(doc_index[i]).mm(self.Vv_embeddingT)
-            similarity_mat_digitized = np.digitize(similarity_mat.cpu().numpy(), self.bin_midpoint)
-            similarity_mat_digitized = torch.from_numpy(similarity_mat_digitized)
-            similarity_mat_digitized.requires_grad = False
 
-            if self.use_cuda:
-                similarity_mat_digitized = similarity_mat_digitized.cuda()
-            similarity_mat = self.bin_weight(similarity_mat_digitized).squeeze()
+            # similarity_mat_digitized = np.digitize(similarity_mat.cpu().numpy(), self.bin_midpoint)
+            # similarity_mat_digitized = torch.from_numpy(similarity_mat_digitized)
+            # if self.use_cuda:
+            #     similarity_mat_digitized = similarity_mat_digitized.cuda()
+            # similarity_mat = self.bin_weight(similarity_mat_digitized).squeeze()
 
             # - self.bin_weight.weight[0]
             Vd = self.doc_index2doc(doc_index[i])
