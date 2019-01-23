@@ -48,18 +48,18 @@ class HierAttNet(nn.Module):
         feature = np.concatenate([unknown_word, feature], axis=0).astype(np.float)
         self.embedding = create_embedding(feature)
 
-        self.bin_midpoint = np.linspace(0.01, .99, num_bins_woexactmatch).tolist()
+        self.bin_midpoint = np.linspace(-0.5, .99, 15).tolist()
         # add extra for exact match
         bins_weight = [0]
         for i in range(len(self.bin_midpoint)-1):
             bins_weight.append((self.bin_midpoint[i] + self.bin_midpoint[i + 1])/2)
         bins_weight.append(1)
         bins_weight = torch.from_numpy(np.array(bins_weight).reshape(len(bins_weight), 1))
-        self.bin_weight = nn.Embedding(num_embeddings=len(bins_weight), embedding_dim=1)
-        self.bin_weight.weight.data.copy_(bins_weight)
-        self.bin_weight.weight.requires_grad = False
+        self.bin_weight_embedding = nn.Embedding(num_embeddings=len(bins_weight), embedding_dim=1)
+        self.bin_weight_embedding.weight.data.copy_(bins_weight)
+        # self.bin_weight_embedding.weight.requires_grad = False
         if use_cuda:
-            self.bin_weight = self.bin_weight.cuda()
+            self.bin_weight_embedding = self.bin_weight_embedding.cuda()
         # feature = torch.from_numpy(feature)
         # self.embedding = nn.Embedding(num_embeddings=feature.shape[0], embedding_dim=feature.shape[1]).from_pretrained(feature)
         # self.embedding.weight.requires_grad = False
@@ -130,13 +130,16 @@ class HierAttNet(nn.Module):
             # similarity_mats[i]
             similarity_mat = self.embedding(doc_index[i]).mm(self.Vv_embeddingT)
 
-            # similarity_mat_digitized = np.digitize(similarity_mat.cpu().numpy(), self.bin_midpoint)
-            # similarity_mat_digitized = torch.from_numpy(similarity_mat_digitized)
-            # if self.use_cuda:
-            #     similarity_mat_digitized = similarity_mat_digitized.cuda()
-            # similarity_mat = self.bin_weight(similarity_mat_digitized).squeeze()
+            similarity_mat_digitized = np.digitize(similarity_mat.cpu().numpy(), self.bin_midpoint)
+            similarity_mat_digitized = torch.from_numpy(similarity_mat_digitized)
+            if self.use_cuda:
+                similarity_mat_digitized = similarity_mat_digitized.cuda()
 
-            # - self.bin_weight.weight[0]
+            # will get histogram
+            import ipdb; ipdb.set_trace()
+            similarity_mat = self.bin_weight_embedding(similarity_mat_digitized).squeeze()
+
+            # - self.bin_weight_embedding.weight[0]
             Vd = self.doc_index2doc(doc_index[i])
 
             raw_word_attns = [i for i in list(zip(Vd, attn_score[i].data.cpu().numpy()))]
