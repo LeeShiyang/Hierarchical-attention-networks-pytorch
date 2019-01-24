@@ -18,7 +18,7 @@ def get_label(label):
 
     return label
 
-
+# add visualize
 class MyDataset(Dataset):
     def __init__(self, data_path, label_path, dictt_path, ImportanceFeatureMatsFile, max_vocab, class_idsFile, VvFile, model_save_path):
         self.Vv = pickle.load(open(VvFile, 'rb'))

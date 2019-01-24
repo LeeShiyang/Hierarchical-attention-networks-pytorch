@@ -36,6 +36,7 @@ class WordAttNet(nn.Module):
             if key in dataset.vocab_dict:
                 feature[dataset.vocab_dict[key]] = value
 
+        feature[:,3] = -feature[:,3]
         feature = normalize(feature, axis=0, norm='max')
         unknown_word = np.zeros((1, word_feature_size))
         feature = torch.from_numpy(np.concatenate([unknown_word, feature], axis=0).astype(np.float))
@@ -52,20 +53,25 @@ class WordAttNet(nn.Module):
         self.dict_len = dict_len
         self._create_weights(mean=0.0, std=0.05)
 
+        self.context_weight_history = []
+
     def _create_weights(self, mean=0.0, std=0.005):
 
         self.word_weight.data.normal_(mean, std)
-        self.context_weight.data.normal_(1, std)
-
         self.word_bias.data.normal_(mean, std)
-        self.context_bias.data.normal_(mean, std)
 
-        self.context_weight.requires_grad = False
+        self.context_weight.data.normal_(1, std)
+        # self.context_bias.data.normal_(mean, std)
+
+        # self.context_weight.requires_grad = False
+        self.context_bias.data.zero_()
         self.context_bias.requires_grad = False
 
 
     def forward(self, input):
         # [word ind, batch]
+        self.context_weight_history.append(self.context_weight.data.cpu().numpy().reshape(-1).copy())
+
         input = input.permute(1, 0)
         # [batch, word ind, emb ind]
         f_output = self.lookup(input)

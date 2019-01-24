@@ -86,6 +86,8 @@ class HierAttNet(nn.Module):
             self.phi_vs = self.phi_vs.cuda()
         self.phi_vs.requires_grad = False
 
+        self.bin_weight_history = []
+
     def forward(self, input, ImportanceFeatureMat, labels):
         batch_size = input.size(0)
         word_attn_score = torch.zeros(self.max_sent_length, batch_size, self.max_word_length)
@@ -112,8 +114,6 @@ class HierAttNet(nn.Module):
         doc_index = input.view(batch_size, -1)
 
         final_score = self.compute_score(doc_index, attn_score, labels)
-        # import pdb;
-        # pdb.set_trace()
         return final_score, attn_score
 
     def doc_index2doc(self, t):
@@ -122,6 +122,7 @@ class HierAttNet(nn.Module):
 
     def compute_score(self, doc_index, attn_score, labels):
         bin_weight_computed = self.bin_weight_difference_start + torch.cumsum(F.relu(self.bin_weight_difference), 0)
+        self.bin_weight_history.append(bin_weight_computed.data.cpu().numpy())
         # , dict_len, phi_vs, embedding, Vv_embedding
         batch_size = doc_index.size(0)
         Nd_len = doc_index.size(1)
@@ -146,7 +147,6 @@ class HierAttNet(nn.Module):
                 similarity_mat_digitized_one_hot = similarity_mat_digitized_one_hot.cuda()
 
             similarity_mat_digitized_one_hot.scatter_(2, similarity_mat_digitized.unsqueeze(2), 1)
-
 
             # will get as weight
             # similarity_mat = self.bin_weight_difference_embedding(similarity_mat_digitized).squeeze()
@@ -175,8 +175,8 @@ class HierAttNet(nn.Module):
 
                     def get_similarity_to_train_bin_weight_difference():
                         outprod_score = torch.ger(attn_score[i], self.phi_vs[j])
-                        if self.use_cuda:
-                            outprod_score = outprod_score.cuda()
+                        # if self.use_cuda:
+                        #     outprod_score = outprod_score.cuda()
                         similarity_histogram = (outprod_score.unsqueeze(2) * similarity_mat_digitized_one_hot).sum((0,1))
                         # final_score[i, j] = torch.sum(outprod_score * similarity_by_concept)
                         score = torch.sum(similarity_histogram * bin_weight_computed)
