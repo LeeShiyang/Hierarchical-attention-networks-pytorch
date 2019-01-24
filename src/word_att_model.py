@@ -57,9 +57,10 @@ class WordAttNet(nn.Module):
         self.word_weight.data.normal_(mean, std)
         self.context_weight.data.normal_(1, std)
 
-
         self.word_bias.data.normal_(mean, std)
         self.context_bias.data.normal_(mean, std)
+
+        self.context_weight.requires_grad = False
         self.context_bias.requires_grad = False
 
 

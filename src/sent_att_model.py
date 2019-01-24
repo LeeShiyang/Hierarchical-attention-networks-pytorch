@@ -24,6 +24,8 @@ class SentAttNet(nn.Module):
 
         self.sent_bias.data.normal_(mean, std)
         self.context_bias.data.normal_(mean, std)
+
+        self.context_weight.requires_grad = False
         self.context_bias.requires_grad = False
 
     def forward(self, input):

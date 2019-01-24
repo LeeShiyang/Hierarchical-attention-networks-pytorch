@@ -11,6 +11,8 @@ from src.utils import matrix_mul, element_wise_mul
 import torch.nn.functional as F
 import pandas as pd
 
+BIN_START = -0.5
+
 
 def create_embedding(mat):
     mat = torch.from_numpy(mat)
@@ -48,18 +50,21 @@ class HierAttNet(nn.Module):
         feature = np.concatenate([unknown_word, feature], axis=0).astype(np.float)
         self.embedding = create_embedding(feature)
 
-        self.bin_midpoint = np.linspace(-0.5, .99, 15).tolist()
+        self.bin_midpoint = np.linspace(BIN_START, .99, 15).tolist()
         # add extra for exact match
-        bins_weight = [0]
+        bins_weight = [BIN_START]
         for i in range(len(self.bin_midpoint)-1):
             bins_weight.append((self.bin_midpoint[i] + self.bin_midpoint[i + 1])/2)
         bins_weight.append(1)
-        bins_weight = torch.from_numpy(np.array(bins_weight).reshape(len(bins_weight), 1))
-        self.bin_weight_embedding = nn.Embedding(num_embeddings=len(bins_weight), embedding_dim=1)
-        self.bin_weight_embedding.weight.data.copy_(bins_weight)
-        # self.bin_weight_embedding.weight.requires_grad = False
-        if use_cuda:
-            self.bin_weight_embedding = self.bin_weight_embedding.cuda()
+        bins_weight_difference = np.diff(bins_weight).tolist()
+        bins_weight_difference.insert(0, 0)
+        bins_weight_difference = torch.from_numpy(np.array(bins_weight_difference))
+        # self.bin_weight_difference_embedding = nn.Embedding(num_embeddings=len(bins_weight), embedding_dim=1)
+        # self.bin_weight_difference_embedding.weight.data.copy_(bins_weight.reshape(len(bins_weight), 1))
+        # self.bin_weight_difference_embedding.weight.requires_grad = False
+        self.bin_weight_difference = nn.Parameter(torch.Tensor(len(bins_weight_difference)))
+        self.bin_weight_difference.data.copy_(bins_weight_difference)
+        self.bin_weight_difference_start = nn.Parameter(torch.Tensor([bins_weight[0]]))
         # feature = torch.from_numpy(feature)
         # self.embedding = nn.Embedding(num_embeddings=feature.shape[0], embedding_dim=feature.shape[1]).from_pretrained(feature)
         # self.embedding.weight.requires_grad = False
@@ -116,6 +121,7 @@ class HierAttNet(nn.Module):
         return texts
 
     def compute_score(self, doc_index, attn_score, labels):
+        bin_weight_computed = self.bin_weight_difference_start + torch.cumsum(F.relu(self.bin_weight_difference), 0)
         # , dict_len, phi_vs, embedding, Vv_embedding
         batch_size = doc_index.size(0)
         Nd_len = doc_index.size(1)
@@ -135,38 +141,53 @@ class HierAttNet(nn.Module):
             if self.use_cuda:
                 similarity_mat_digitized = similarity_mat_digitized.cuda()
 
-            # will get histogram
-            import ipdb; ipdb.set_trace()
-            similarity_mat = self.bin_weight_embedding(similarity_mat_digitized).squeeze()
+            similarity_mat_digitized_one_hot = torch.zeros(similarity_mat_digitized.shape[0], similarity_mat_digitized.shape[1], 16)
+            if self.use_cuda:
+                similarity_mat_digitized_one_hot = similarity_mat_digitized_one_hot.cuda()
 
-            # - self.bin_weight_embedding.weight[0]
+            similarity_mat_digitized_one_hot.scatter_(2, similarity_mat_digitized.unsqueeze(2), 1)
+
+
+            # will get as weight
+            # similarity_mat = self.bin_weight_difference_embedding(similarity_mat_digitized).squeeze()
+
+            # - self.bin_weight_difference_embedding.weight[0]
             Vd = self.doc_index2doc(doc_index[i])
 
             raw_word_attns = [i for i in list(zip(Vd, attn_score[i].data.cpu().numpy()))]
             word_attns = [i for i in list(zip(Vd, attn_score[i].data.cpu().numpy())) if i[0]]
 
-            def get_similarity(j):
-                # get concept wise interaction matrix
-                # phi_v = self.phi_vs[j].cpu().numpy()
-                # Vv = [self.dataset.Vv[t] for t in phi_v.nonzero()[0]]
-                # sub_similarity_mat = similarity_mat.cpu().numpy()[:, phi_v.nonzero()[0]]
-                # sub_similarity_frame = pd.DataFrame(sub_similarity_mat, columns=Vv, index=Vd)
-                # pickle.dump(sub_similarity_frame, open('sub_similarity_frame_{}_{}.bin'.format(i,j), 'wb'))
-
-                # import ipdb; ipdb.set_trace()
-                similarity_by_concept = similarity_mat * self.phi_vs[j]
-                # similarity_by_concept, _ = similarity_by_concept.max(1)
-                similarity_by_concept = similarity_by_concept.sum(1)
-
-                return torch.sum(attn_score[i] * similarity_by_concept)
-
             for j in range(node_num):
                 try:
-                    # outprod_score = torch.ger(attn_score[i], self.phi_vs[j]).cuda()
-                    # final_score[i, j] = torch.sum(outprod_score * similarity_by_concept)
-                    final_score[i, j] = get_similarity(j)
+                    def get_similarity():
+                        # get concept wise interaction matrix
+                        # phi_v = self.phi_vs[j].cpu().numpy()
+                        # Vv = [self.dataset.Vv[t] for t in phi_v.nonzero()[0]]
+                        # sub_similarity_mat = similarity_mat.cpu().numpy()[:, phi_v.nonzero()[0]]
+                        # sub_similarity_frame = pd.DataFrame(sub_similarity_mat, columns=Vv, index=Vd)
+                        # pickle.dump(sub_similarity_frame, open('sub_similarity_frame_{}_{}.bin'.format(i,j), 'wb'))
+
+                        similarity_by_concept = similarity_mat * self.phi_vs[j]
+                        # similarity_by_concept, _ = similarity_by_concept.max(1)
+                        similarity_by_concept = similarity_by_concept.sum(1)
+
+                        return torch.sum(attn_score[i] * similarity_by_concept)
+
+                    def get_similarity_to_train_bin_weight_difference():
+                        outprod_score = torch.ger(attn_score[i], self.phi_vs[j])
+                        if self.use_cuda:
+                            outprod_score = outprod_score.cuda()
+                        similarity_histogram = (outprod_score.unsqueeze(2) * similarity_mat_digitized_one_hot).sum((0,1))
+                        # final_score[i, j] = torch.sum(outprod_score * similarity_by_concept)
+                        score = torch.sum(similarity_histogram * bin_weight_computed)
+                        return score
+
+                    final_score[i, j] = get_similarity_to_train_bin_weight_difference()
+                    # get_similarity(j)
                 except Exception as e:
+                    import ipdb; ipdb.set_trace()
                     pass
-            pass
+
+            print(i)
 
         return final_score
