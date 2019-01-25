@@ -20,7 +20,7 @@ def get_label(label):
 
 # add visualize
 class MyDataset(Dataset):
-    def __init__(self, data_path, label_path, dictt_path, ImportanceFeatureMatsFile, max_vocab, class_idsFile, VvFile, model_save_path):
+    def __init__(self, data_path, label_path, dictt_path, ImportanceFeatureMatsFile, max_vocab, label_namesFile, VvFile, model_save_path):
         self.Vv = pickle.load(open(VvFile, 'rb'))
         super(MyDataset, self).__init__()
 
@@ -34,7 +34,7 @@ class MyDataset(Dataset):
 
         self.model_gensim = Word2Vec.load(model_save_path)
 
-        class_ids = pickle.load(open(class_idsFile, 'rb'))
+        class_ids = pickle.load(open(label_namesFile, 'rb'))
         class_id2ind = {id: ind for ind, id in enumerate(class_ids)}
 
         for line, label in zip(text_lines, labels_lines):
@@ -67,6 +67,7 @@ class MyDataset(Dataset):
             self.vocab_dict[value] = index
 
         self.ImportanceFeatureMats = pickle.load(open(ImportanceFeatureMatsFile, 'rb'))
+        self.sent_feature_len = self.ImportanceFeatureMats[0].shape[1]
         self.max_length_sentences = max_length_sentences
         self.max_length_word = max_length_word
         self.num_classes = len(self.class_id2ind)
@@ -109,8 +110,11 @@ class MyDataset(Dataset):
         document_encode = np.stack(arrays=document_encode, axis=0)
         document_encode += 1
 
-        return document_encode.astype(np.int64), ImportanceFeatureMat_padded, label, text
+        return document_encode.astype(np.int64), ImportanceFeatureMat_padded, label, index
 
+    def doc_tensor2doc(self, t):
+        texts = [self.index_dict[i - 1] if i > 0 else '' for i in t.data.cpu().numpy().reshape(-1)]
+        return texts
 
 if __name__ == '__main__':
     test = MyDataset(data_path="/disk/home/klee/data/cs_merged_tokenized_superspan_HANs.txt", label_path='/disk/home/klee/data/cs_merged_label', dict_path="/disk/home/klee/data/cs_merged_tokenized_dictionary.bin")

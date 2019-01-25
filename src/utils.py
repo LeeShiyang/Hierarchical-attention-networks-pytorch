@@ -7,6 +7,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 import torch
 import sys
 import csv
+from collections import defaultdict
 csv.field_size_limit(sys.maxsize)
 
 
@@ -74,24 +75,37 @@ def top_k_accuracy_score(y_true, y_prob, k=5, normalize=True):
     num_obs, num_labels = y_prob.shape
     counter = 0
     argsorted = np.argsort(-y_prob, axis=1)
+    classind2error = defaultdict(list)
     for i in range(num_obs):
         if y_true[i] in argsorted[i, :k]:
             counter += 1
+        else:
+            classind2error[y_true[i]].append((i, argsorted[i, :5]))
+            pass
 
     if normalize:
-        return counter / num_obs
-    else:
-        return counter
+        counter = counter / num_obs
+
+
+    return counter, classind2error
 
 
 def get_evaluation(y_true, y_prob, list_metrics):
+    # get per class accuracy & error case
+
     y_pred = np.argmax(y_prob, -1)
     output = {}
+    if "top K classind2doc_ind_in_batchs" in list_metrics:
+        output['top K classind2doc_ind_in_batchs'] = {
+            'top 1': top_k_accuracy_score(y_true, y_prob, 1)[1],
+            'top 3': top_k_accuracy_score(y_true, y_prob, 3)[1],
+            'top 5': top_k_accuracy_score(y_true, y_prob, 5)[1],
+        }
     if "top K accuracy" in list_metrics:
         output['top K accuracy'] = {
-            'top 1': metrics.accuracy_score(y_true, y_pred),
-            'top 3': top_k_accuracy_score(y_true, y_prob, 3),
-            'top 5': top_k_accuracy_score(y_true, y_prob, 5),
+            'top 1': top_k_accuracy_score(y_true, y_prob, 1)[0],
+            'top 3': top_k_accuracy_score(y_true, y_prob, 3)[0],
+            'top 5': top_k_accuracy_score(y_true, y_prob, 5)[0],
         }
     if 'accuracy' in list_metrics:
         output['accuracy'] = metrics.accuracy_score(y_true, y_pred)

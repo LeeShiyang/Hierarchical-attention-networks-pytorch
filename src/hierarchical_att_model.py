@@ -116,10 +116,6 @@ class HierAttNet(nn.Module):
         final_score = self.compute_score(doc_index, attn_score, labels)
         return final_score, attn_score
 
-    def doc_index2doc(self, t):
-        texts = [self.dataset.index_dict[i - 1] if i > 0 else '' for i in t.cpu().numpy()]
-        return texts
-
     def compute_score(self, doc_index, attn_score, labels):
         bin_weight_computed = self.bin_weight_difference_start + torch.cumsum(F.relu(self.bin_weight_difference), 0)
         self.bin_weight_history.append(bin_weight_computed.data.cpu().numpy())
@@ -152,7 +148,7 @@ class HierAttNet(nn.Module):
             # similarity_mat = self.bin_weight_difference_embedding(similarity_mat_digitized).squeeze()
 
             # - self.bin_weight_difference_embedding.weight[0]
-            Vd = self.doc_index2doc(doc_index[i])
+            Vd = self.dataset.doc_tensor2doc(doc_index[i])
 
             raw_word_attns = [i for i in list(zip(Vd, attn_score[i].data.cpu().numpy()))]
             word_attns = [i for i in list(zip(Vd, attn_score[i].data.cpu().numpy())) if i[0]]
